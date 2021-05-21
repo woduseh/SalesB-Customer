@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper
+	namespace="handong.capstone2019s.salesb.domain.repository.customer.CustomerRepository">
+
+	<!-- CUSTOMER -->
+	<resultMap id="customerResultMap" type="Customer">
+		<id property="customerCode" column="customer_code" />
+		<result property="customerName" column="customer_name" />
+		<result property="customerPass" column="customer_pass" />
+		<result property="customerMail" column="customer_mail" />
+		<result property="customerTel" column="customer_tel" />
+	</resultMap>
+
+	<!-- SELLER -->
+	<resultMap id="sellerResultMap" type="Seller">
+		<id property="sellerCode" column="seller_code" />
+		<result property="sellerName" column="seller_name" />
+		<result property="sellerInformation"
+			column="seller_information" />
+		<result property="sellerImageUrl" column="seller_image_url" />
+	</resultMap>
+
+	<!-- SELLERCUSTOMER -->
+	<resultMap id="SellerCustomerResultMap" type="SellerCustomer">
+		<result property="sellerCode" column="seller_code" />
+		<result property="customerCode" column="customer_code" />
+	</resultMap>
+	
+	<resultMap id="sellerProductMap" type="SellerProduct">
+		<id property="productCode" column="product_code" />
+		<result property="productModel" column="product_model" />
+		<result property="productBodyStyle" column="product_body_style" />
+		<result property="productYear" column="product_year" />
+		<result property="productMonth" column="product_month" />
+		<result property="productPrice" column="product_price" />
+		<result property="productMake" column="product_make" />
+		<result property="productMileage" column="product_mileage" />
+		<result property="productEngine" column="product_engine" />
+		<result property="productFuel" column="product_fuel" />
+		<result property="productTransmission"
+			column="product_transmission" />
+		<result property="productColor" column="product_color" />
+		<result property="productImageUrl" column="product_image_url" />
+
+	</resultMap>
+	
+	<select id="countBySellerProduct" parameterType="SellerProduct"
+		resultType="_long">
+		SELECT
+		COUNT(*)
+		FROM
+		product
+		WHERE
+		product_delete_date IS NULL
+		AND
+		seller_code = #{product.sellerCode}
+	</select>
+	
+	<select id="showSellerProduct" parameterType="SellerProduct"
+		resultMap="sellerProductMap">
+		SELECT
+		product_model,
+		product_body_style,
+		product_year,
+		product_month,
+		product_price,
+		product_make,
+		product_mileage,
+		product_engine,
+		product_fuel,
+		product_transmission,
+		product_color,
+		product_image_url,
+		product_code
+		FROM
+		product
+		WHERE
+		product_delete_date IS NULL
+		AND
+		seller_code = #{product.sellerCode}
+		<if test="product.productModel != null">
+			AND
+			product_model ILIKE '%' || #{product.productModel} ||
+			'%'
+		</if>
+		<if test="product.productBodyStyle != null">
+			AND
+			product_body_style ILIKE '%' ||
+			#{product.productBodyStyle} || '%'
+		</if>
+		<if test="product.productColor != null">
+			AND
+			product_color ILIKE '%' || #{product.productColor} ||
+			'%'
+		</if>
+		<if
+			test="product.productPrice != null || product.productMake != null ||
+	product.productMileage !=null || product.productEngine != null ||
+	product.productFuel != null || product.productTransmission != null">
+			AND
+			(product_price || product_make || product_mileage ||
+			product_engine
+			|| product_fuel || product_transmission) ILIKE '%' ||
+			#{product.productPrice} || '%'
+		</if>
+		ORDER BY product_code DESC LIMIT #{pageable.pageSize} OFFSET
+		#{pageable.offset}
+	</select>
+
+	<select id="findById" parameterType="string"
+		resultMap="customerResultMap">
+		SELECT
+		customer_code,
+		customer_name,
+		customer_pass,
+		customer_mail,
+		customer_tel,
+		customer_manage_seller
+		FROM
+		customer
+		WHERE
+		customer_code = #{customerCode}
+	</select>
+	
+	<update id="deleteById" parameterType="string">
+		UPDATE
+		product
+		SET
+		product_delete_date = current_timestamp
+		WHERE
+		product_code =
+		#{productCode}
+	</update>
+	
+	<update id="update" parameterType="string">
+		UPDATE
+		product
+		SET
+		product_model
+		= #{productModel},
+		product_body_style = #{productBodyStyle},
+		product_year = #{productYear},
+		product_month = #{productMonth},
+		product_price = #{productPrice},
+		product_make = #{productMake},
+		product_mileage = #{productMileage},
+		product_engine = #{productEngine},
+		product_fuel = #{productFuel},
+		product_transmission =
+		#{productTransmission},
+		product_color = #{productColor}
+		WHERE
+		product_code = #{productCode}
+	</update>
+
+	<insert id="insert" parameterType="Customer">
+		<selectKey keyProperty="customerCode" resultType="string"
+			order="BEFORE">
+			SELECT
+			TO_CHAR(nextval('CUSTOMER_CODE_SEQ'),'FM00000000') AS
+			customerCode
+		</selectKey>
+		INSERT INTO
+		customer
+		(
+		customer_code,
+		customer_name,
+		customer_pass,
+		customer_mail,
+		customer_tel
+		)
+		VALUES
+		(
+		#{customerCode},
+		#{customerName},
+		#{customerPass},
+		#{customerMail},
+		#{customerTel}
+		)
+	</insert>
+
+	<insert id="insertRequestToSeller" parameterType="Request">
+		<selectKey keyProperty="seq" resultType="int" order="BEFORE">
+			SELECT
+			cast(TO_CHAR(nextval('request_to_seller_seq_seq'),'FM00000000') as
+			integer)AS seq
+		</selectKey>
+		INSERT INTO
+		customer_request
+		(
+		seq,
+		client,
+		the_person_in_charge,
+		request_name,
+		request_contents,
+		add_time,
+		update_time,
+		delete_time,
+		var
+		)
+		VALUES
+		(
+		#{seq},
+		#{client},
+		#{thePersonInCharge},
+		#{requestName},
+		#{requestContents},
+		now(),
+		now(),
+		NULL,
+		1
+		)
+	</insert>
+
+	<insert id="insertJoinStoreRequest" parameterType="Request">
+		<selectKey keyProperty="seq" resultType="int" order="BEFORE">
+			SELECT
+			cast(TO_CHAR(nextval('customer_request_seq'),'FM00000000') as
+			integer)AS seq
+		</selectKey>
+		INSERT INTO
+		request_to_seller
+		(
+		seq,
+		customer_name,
+		customer_code,
+		the_person_in_charge,
+		customer_mail,
+		request_content,
+		add_date,
+		update_date,
+		delete_date,
+		var
+		)
+		VALUES
+		(
+		#{seq},
+		#{customerName},
+		#{customerCode},
+		#{thePersonInCharge},
+		#{customerMail},
+		#{requestContents},
+		now(),
+		now(),
+		NULL,
+		1
+		)
+	</insert>
+
+	<select id="selectEverySeller" parameterType="Seller"
+		resultMap="sellerResultMap">
+		SELECT
+		seller_name,
+		seller_code,
+		seller_information,
+		seller_image_url
+		FROM
+		seller INNER JOIN store ON seller_code = store_code
+		WHERE
+		seller_information IS NOT NULL
+		AND
+		is_expired = 0
+	</select>
+	
+	<select id="findByProductId" parameterType="string"
+		resultMap="sellerProductMap">
+		SELECT
+		product_code,
+		product_model,
+		product_body_style,
+		product_year,
+		product_month,
+		product_price,
+		product_make,
+		product_mileage,
+		product_engine,
+		product_fuel,
+		product_transmission,
+		product_color,
+		product_image_url
+		FROM
+		product
+		WHERE
+		product_code =
+		#{productCode}
+	</select>
+
+	<select id="selectSellerCustomer" parameterType="SellerCustomer"
+		resultMap="SellerCustomerResultMap">
+		SELECT
+		seller_code,
+		customer_code
+		FROM
+		seller_customer
+		where
+		customer_code =
+		#{customerCode};
+	</select>
+	
+	
+
+	<select id="countEverySeller" parameterType="Seller"
+		resultType="_long">
+		SELECT
+		COUNT(*)
+		FROM
+		seller
+	</select>
+</mapper>
